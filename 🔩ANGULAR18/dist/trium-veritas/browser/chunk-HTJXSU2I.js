@@ -1,0 +1,1 @@
+import{Ea as i,Ga as r,U as t,ya as o,za as a}from"./chunk-XX56NYDY.js";var s=class n{static \u0275fac=function(e){return new(e||n)};static \u0275cmp=t({type:n,selectors:[["app-container"]],standalone:!0,features:[r],decls:2,vars:0,template:function(e,m){e&1&&(o(0,"p"),i(1,"container works!"),a())}})};export{s as ContainerComponent};

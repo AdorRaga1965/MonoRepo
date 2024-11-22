@@ -1,0 +1,248 @@
+import { Injectable } from '@angular/core';
+type SkinType = {
+  [key: string]: any;
+};
+@Injectable({
+  providedIn: 'root',
+})
+export class ClockService {
+  constructor() {
+    this.hourHand.src =   this.url + '/img/clock/hour_hand.png';
+    this.minuteHand.src = this.url + '/img/clock/minute_hand.png';
+    this.secondHand.src = this.url + '/img/clock/second_hand2.png';
+}
+  private hourHand: HTMLImageElement = new Image();
+  private minuteHand: HTMLImageElement = new Image();
+  private secondHand: HTMLImageElement = new Image();
+  private url: string = "https://localhost";
+  private radians = Math.PI/180;
+  private diameter = 0;
+  private radius = 0;
+  private CTX: CanvasRenderingContext2D | null = null;
+  private SKIN: SkinType = {};
+  private canvasArray: { "canvas": HTMLCanvasElement, "ctx": CanvasRenderingContext2D | null ,  "skin": SkinType }[] = [];
+  private isItMetric = false;
+  private numClocks =0;
+  private interval : any;//🤡
+
+  init(canvas:  HTMLCanvasElement, skinInput: SkinType, canvasNumber:number=0, isPush:boolean=true) {
+    if (canvas && canvas.getContext) {
+          if( isPush )
+          {
+            this.numClocks++;
+            const context  =  canvas.getContext('2d');
+            this.canvasArray.push( {"canvas": canvas, "ctx": context, "skin": skinInput } ) ;
+          }
+          this.interval = setInterval(() => {this.draw(); }, 100);
+    } else {
+      alert('Canvas not supported!');
+      return; // Early return if canvas not supported
+    }
+  }
+
+  setSkinValue(key:string, value: string, canvasNumber:number=0){
+    clearInterval(this.interval);
+    const canvas = this.canvasArray[canvasNumber];
+    console.log(this.canvasArray, {canvas, canvasNumber, key})
+    const skin = canvas.skin;
+    if(key.toLowerCase().includes("scale")) { skin[key] =    parseInt(value)/50; }
+    else
+    if(key.toLowerCase().includes("rotation")) { skin[key] = value; }
+    else
+      skin[key] = value.toString();
+    this.currentCanvasNumber = canvasNumber;
+    this.metaMorph = { item:  key, change: value };
+    // alert(this.metaMorph["item"] + ":" + this.metaMorph["change"]);
+    this.init( canvas.canvas,  skin, canvasNumber, false);
+  }
+  currentCanvasNumber = 10;
+  metaMorph : {item: string, change: any} = { item:"", change:""};
+
+  private draw(): void {
+    let previous_left = 0; /// holds the value of the left position of the preceeding canvas
+    for(let _canvasNumber =0; _canvasNumber<this.numClocks; _canvasNumber++){
+          const loopingCanvas  = this.canvasArray[_canvasNumber].canvas;
+          const loopingSKIN =  this.canvasArray[_canvasNumber].skin;
+          this.SKIN = loopingSKIN;
+          let canvas = loopingCanvas
+          if(this.currentCanvasNumber === _canvasNumber)
+              {
+                loopingCanvas.style.rotate = loopingSKIN["rotation"] +"deg";
+                loopingCanvas.style.scale =  ( (loopingSKIN["scale"] ) /50).toString();
+                loopingSKIN[ this.metaMorph["item"]] =  this.metaMorph["change"];
+              }
+              this.diameter = this.SKIN["dimension"];
+              this.radius = this.diameter/2;
+              canvas.style.left = previous_left + "px";
+              let offset =  Math.ceil(parseInt(canvas.style.width) * parseInt(canvas.style.scale) );
+      canvas.style.left += offset/2 + "px";
+      previous_left += offset/4;
+      this.CTX  =  canvas.getContext('2d');
+      if (this.CTX) {
+        const currentTime = new Date();
+        let hours = currentTime.getHours();
+        let minutes = currentTime.getMinutes();
+        let seconds = currentTime.getSeconds();
+        let ms = currentTime.getMilliseconds();
+        this.clearCanvas();
+        if(this.isItMetric){
+          const numSeconds = (ms / 1000) + seconds + (minutes * 60) + (hours * 3600);
+          const metricNumSeconds = (numSeconds * 100000) / 86400 + "";
+          const metricFormat = metricNumSeconds.split(".");
+          let metricNumSecondsText = metricFormat[0];
+          while (metricNumSecondsText.length < 6) metricNumSecondsText = "0" + metricNumSecondsText;
+          hours =   parseInt(metricNumSecondsText.substr(0, 2));
+          minutes = parseInt(metricNumSecondsText.substr(2, 2));
+          seconds = parseInt(metricNumSecondsText.substr(4, 2));
+        }
+        this.CTX.save();
+        this.drawClock();
+        this.rotateAndDraw(this.minuteHand, this.getRequiredMinuteAngle(minutes, seconds), "m");
+        this.rotateAndDraw(this.hourHand, this.getRequiredHourAngle(hours, minutes, seconds), "h");
+        this.rotateAndDraw(this.secondHand, this.getRequiredSecondAngle(seconds), "s");
+        this.showDigital(this.rectify(hours) + ":" + this.rectify(minutes) + ":" + this.rectify(seconds) );
+        this.CTX.restore();
+      }
+    }
+  }
+
+  private rectify(num:number):string {
+    return  (num<10 ? "0"+ num: num.toString());
+  }
+
+  private clearCanvas(): void {
+    if (!this.CTX) return;
+    this.CTX.clearRect(0, 0, this.diameter, this.diameter);
+  }
+  private getRequiredMinuteAngle(minutes: number, seconds: number): number {
+    return  !this.isItMetric ? 6 * (minutes + seconds / 60)
+      : (minutes + seconds / 100) * 3.6;
+  }
+  private getRequiredHourAngle(hours: number, minutes: number, seconds: number): number {
+    return  !this.isItMetric ? 30 * (hours + minutes / 60 + seconds/3600)
+      : 36 * (hours + minutes / 100 + seconds/10000) ;
+  }
+  private getRequiredSecondAngle(seconds: number): number {
+    return  !this.isItMetric ? 6 * seconds : seconds * 3.6;
+  }
+  private rotateAndDraw(image: HTMLImageElement, angle: number, handType: "h" | "m" | "s"= "s"): void {
+    if (this.CTX)
+    {
+      angle = angle * this.radians;
+      const handLength = { "h": 50, "m": 70, "s": 95 };
+      const handWidth = { "h": 16, "m": 10, "s": 1 };
+      const handOpacity = { "h": 0.5, "m": 0.7, "s": 1 };
+      this.CTX.lineWidth = handWidth[handType];
+
+      this.CTX.rotate(angle);
+      // this.CTX.beginPath();
+      // this.CTX.globalAlpha = handOpacity[handType]-0.1;
+      // this.CTX.lineTo(shadowOffset, -this.radius * handLength[handType] / 100 + shadowOffset); // Offset shadow by shadowOffset
+      // this.CTX.lineTo(shadowOffset, 0);
+      // this.CTX.stroke();
+      this.CTX.strokeStyle="red";
+      this.CTX.beginPath();
+      this.CTX.globalAlpha = handOpacity[handType];
+      this.CTX.lineTo(0, -this.radius * handLength[handType] / 100);
+      this.CTX.lineTo(0, 0);
+      this.CTX.stroke();
+      this.CTX.rotate(-angle);
+    }
+  }
+
+  private drawClock() {
+    if (this.CTX)
+    {
+          this.CTX.translate(this.radius, this.radius);
+          this.drawFace();
+          this.drawNumbers();
+          this.drawTicks();
+    }
+  }
+
+  private drawFace() {
+    if (this.CTX) {
+          this.CTX.beginPath();
+          this.CTX.ellipse(0, 0, this.radius, this.radius, 0, 0, 2 * Math.PI);
+          this.CTX.fillStyle =  this.SKIN["faceColor"];
+          this.CTX.fill();
+    }
+  }
+
+  private drawNumbers() {
+    let ang;
+    let num;
+    if(this.CTX){
+          this.CTX.beginPath();
+          this.CTX.fillStyle = this.SKIN["hourColor"];
+          this.CTX.font = this.radius * 0.25 + "px times";
+          this.CTX.textBaseline = "middle";
+          this.CTX.textAlign = "center";
+          for (num = (this.isItMetric ? 0  : 1) ; num < (this.isItMetric? 10: 13); num++) {
+                ang = num * (this.isItMetric?36:30) * this.radians ;
+                this.CTX.rotate(ang);
+                this.CTX.translate(0, -this.radius * 0.85);
+                if(this.SKIN["isUpright"]) this.CTX!.rotate(-ang);
+                this.CTX.fillText(num.toString(), 0, 0);
+                if(this.SKIN["isUpright"]) this.CTX!.rotate(ang);
+                this.CTX.translate(0, this.radius * 0.85);
+                this.CTX.rotate(-ang);
+          }
+    }
+  }
+
+  private showDigital(digital:string ) {
+    let ang;
+    let num;
+    if(this.CTX){
+              this.CTX.beginPath();
+               this.CTX.fillStyle = this.SKIN["digitColor"];
+              this.CTX.font = this.radius * 0.2 + "px times";
+              this.CTX.textBaseline = "middle";
+              this.CTX.textAlign = "center";
+              this.CTX.translate(0, -this.radius * 0.40);
+              this.CTX.fillText(digital, 0, 0);
+    }
+
+  }
+
+  private drawTicks() {
+    let ang;
+    const start = 0;
+    const end = this.isItMetric ? 10: 12;
+    if(this.CTX){
+             this.CTX.strokeStyle = this.SKIN["tickColor"];
+            for (let num = start; num < end; num++)
+            {
+              const angle = num * (this.isItMetric?36:30) * this.radians ;
+              this.CTX.globalAlpha = 0.5;
+               this.CTX.lineWidth = this.SKIN["tickWidth"];
+              this.CTX.rotate(angle);
+              this.CTX.beginPath();
+              this.CTX.moveTo(0, -this.radius * 0.75);
+              this.CTX.lineTo(0, -this.radius * 0.65);
+              this.CTX.stroke();
+              this.CTX.rotate(-angle);
+                  for( let tiny= 0; tiny < (this.isItMetric ? 10: 5) ; tiny++){
+                    const angle2 = (num + tiny/(this.isItMetric ? 10: 5) ) * (this.isItMetric?36:30) * this.radians ;
+                    this.CTX.globalAlpha = 1.0;
+                    this.CTX.lineWidth = 2;
+                    this.CTX.rotate(angle2);
+                    this.CTX.beginPath();
+                    this.CTX.moveTo(0, -this.radius * 0.75);
+                    this.CTX.lineTo(0, -this.radius * 0.70);
+                    this.CTX.stroke();
+                    this.CTX.rotate(-angle2);
+                  }
+            }
+    }
+  }
+
+
+
+
+
+
+
+
+}

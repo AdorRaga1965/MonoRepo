@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VPN Client Request</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      width: 300px;
+    }
+    input {
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="items-center">
+<div class="w-full items-center min-h-[500px]">
+  <iframe class="w-full h-full" src="https://localhost/vpn"></iframe>
+</div>
+
+
+    <div class="text-zinc-200 opacity-70  w-[500px] px-10 mockup-phone">
+      <br><h2 class="text-shadow drop-shadow-lg text-zinc-200 shadow-amber-300">Request VPN Client Gateway</h2>
+    <hr>
+      <form id="vpnRequestForm">
+      <div class="flex items-center gap-10">
+      <div class="my-10 drop-shadow-lg shadow-amber-500 ">
+        Name:<br><input id="name"  class="bg-indigo-100     text-blue-600 w-[300px]" type="text" name="name" required><br>
+        Email:<br><input id="email"  class="bg-indigo-100   text-blue-600  w-[300px]" type="email" name="email" required><br>
+      </div>
+      <button type="submit" (click)="submitRequest()"  class="btn btn-ghost btn-lg" ><div  class="w-24 text-xl text-white hover:text-red-300">💫 Submit</div></button>
+      </div>
+    </form>
+
+      <div id="result" class="w-full mx-4 h-fit p-4 mockup-phone ">
+        <h2 class="text-amber-400">Profile Created</h2>
+        <p id="profile">{{result.profile}}</p>
+        <h3>QR Code</h3>
+        <img id="qrCode" src="{{result.qr_code_url}}" alt="QR Code">
+      </div>
+
+    </div>
+    </body>
+</html>

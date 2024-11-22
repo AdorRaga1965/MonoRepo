@@ -1,0 +1,57 @@
+/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+h1 {
+  @apply text-5xl font-extrabold;
+}
+
+h2 {
+  @apply text-3xl font-extrabold;
+}
+
+h3 {
+  @apply text-xl font-extrabold;
+}
+
+
+.monoton {
+  font-family: Monoton;
+}
+
+.bungee {
+  font-family: Bungee Spice;
+}
+
+.danfo {
+  font-family: Danfo;
+}
+
+.almendraSC {
+  font-family: Almendra SC;
+}
+
+.londrina {
+  font-family: Londrina Shadow;
+}
+
+.black-ops-one-regular {
+  font-family: "Black Ops One", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.oi {
+  font-family: Oi;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.lora123 {
+  font-family: "Lora", serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+}
